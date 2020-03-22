@@ -14,8 +14,8 @@ import pickle
 import copy
 
 COCO_ROOT = 'data/coco/'
-IMAGES = 'images'
-ANNOTATIONS = 'annotations'
+IMAGES = '.'
+ANNOTATIONS = '.'
 COCO_API = 'PythonAPI'
 INSTANCES_SET = 'instances_{}.json'
 COCO_CLASSES = ('person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus',
@@ -93,7 +93,7 @@ class COCODetection(data.Dataset):
     def __init__(self, root, image_set='trainval35k', transform=None,
                  target_transform=COCOAnnotationTransform(), dataset_name='MS COCO'):
         sys.path.append(osp.join(root, COCO_API))
-        self.root = osp.join(root, IMAGES, image_set)
+        self.root = osp.join(root, IMAGES, "val2014")
         self.coco = COCO(osp.join(root, ANNOTATIONS,
                                   INSTANCES_SET.format(image_set)))
         self.ids = self.coco.getImgIds()
@@ -136,7 +136,7 @@ class COCODetection(data.Dataset):
         target = self.coco.loadAnns(ann_ids)
         path = osp.join(self.root, self.coco.loadImgs(img_id)[0]['file_name'])
         assert osp.exists(path), 'Image path does not exist: {}'.format(path)
-        img = cv2.imread(osp.join(self.root, path))
+        img = cv2.imread(path)
         height, width, _ = img.shape
 
         if self.target_transform is not None:
@@ -277,7 +277,8 @@ class COCODetection(data.Dataset):
     def evaluate_detections(self, all_boxes, output_dir):
         res_file = os.path.join(output_dir, ('detections_' + self.name + '_results'))
         res_file += '.json'
-        self._write_coco_results_file(all_boxes, res_file)
+        if not os.path.isfile(res_file):
+            self._write_coco_results_file(all_boxes, res_file)
 
         if self.name.find('test') == -1:
             self._do_detection_eval(res_file, output_dir)
